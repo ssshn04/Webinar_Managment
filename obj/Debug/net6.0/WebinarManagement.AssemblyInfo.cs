@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WebinarManagement")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+355937010dceae93494dc5220b43ecfd6ca87c99")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9f1fdf618270f7f545edc67cb92e4f43e20bdeae")]
 [assembly: System.Reflection.AssemblyProductAttribute("WebinarManagement")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WebinarManagement")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
