@@ -1,0 +1,78 @@
+﻿@page "/register"
+@using WebinarManagement.Models
+@using WebinarManagement.Services
+@inject NavigationManager navigationManager
+@inject UserAccountService userAccountService
+@inject IJSRuntime JSRuntime
+
+<h3>Register</h3>
+
+<div class="row">
+    <div class="col-lg-4 offset-lg-4 pt-4 pb-4 border">
+        <div class="mb-3 text-center">
+            <h3>REGISTER</h3>
+        </div>
+        <div class="mb-3">
+            <label>User Name</label>
+            <input @bind="registerModel.UserName" class="form-control" placeholder="User Name" />
+        </div>
+        <div class="mb-3">
+            <label>Email</label>
+            <input @bind="registerModel.Email" class="form-control" placeholder="Email" />
+        </div>
+        <div class="mb-3">
+            <label>Password</label>
+            <input type="password" @bind="registerModel.Password" class="form-control" placeholder="Password" />
+        </div>
+        <div class="mb-3">
+            <label>Confirm Password</label>
+            <input type="password" @bind="registerModel.ConfirmPassword" class="form-control" placeholder="Confirm Password" />
+        </div>
+        <div class="mb-3">
+            <label>Role</label>
+            <select @bind="registerModel.Role" class="form-control">
+                <option value="Participant">Participant</option>
+                <option value="Speaker">Speaker</option>
+            </select>
+        </div>
+        <div class="nb-3 d-grid gap-2">
+            <button @onclick="RegisterUser" class="btn btn-primary">Register</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new RegisterModel();
+
+    private async Task RegisterUser()
+    {
+        if (registerModel.Password != registerModel.ConfirmPassword)
+        {
+            return;
+        }
+
+        var newUser = new User
+            {
+                UserName = registerModel.UserName,
+                Email = registerModel.Email,
+                PasswordHash = registerModel.Password
+            };
+
+        var result = await userAccountService.RegisterUserAsync(newUser, registerModel.Role);
+
+        if (result)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "You have registered!");
+            navigationManager.NavigateTo("/login");
+        }
+    }
+
+    private class RegisterModel
+    {
+        public string UserName { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public string ConfirmPassword { get; set; }
+        public string Role { get; set; } = "Participant";
+    }
+}

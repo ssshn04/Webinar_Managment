@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System;
+using System.Data;
 
 namespace WebinarManagement.Services
 {
@@ -76,6 +77,25 @@ namespace WebinarManagement.Services
                 await _unitOfWork.SaveAsync(); 
             }
         }
+
+        public async Task<bool> RegisterUserAsync(User newUser, string role)
+        {
+            var existingUser = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.UserName == newUser.UserName);
+            if (existingUser != null)
+            {
+                return false; 
+            }
+
+            newUser.Role = role;
+
+            await _unitOfWork.UserRepository.AddAsync(newUser);
+            await _unitOfWork.SaveAsync();
+
+            return true;
+        }
+
+
+
 
     }
 }
