@@ -1,0 +1,82 @@
+﻿@page "/editwebinar/{webinarId}"
+@using WebinarManagement.Models
+@using WebinarManagement.Services
+@inject WebinarService WebinarService
+@inject NavigationManager NavigationManager
+
+<h3>Edit Webinar</h3>
+
+@if (webinar == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <EditForm Model="@webinar" OnValidSubmit="@HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="title">Title:</label>
+            <InputText id="title" class="form-control" @bind-Value="webinar.Title" />
+            <ValidationMessage For="@(() => webinar.Title)" />
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <InputText id="description" class="form-control" @bind-Value="webinar.Description" />
+            <ValidationMessage For="@(() => webinar.Description)" />
+        </div>
+
+        <div class="form-group">
+            <label for="shortDescription">Short Description:</label>
+            <InputText id="shortDescription" class="form-control" @bind-Value="webinar.ShortDescription" />
+            <ValidationMessage For="@(() => webinar.ShortDescription)" />
+        </div>
+
+        <div class="form-group">
+            <label for="imageUrl">Image URL:</label>
+            <InputText id="imageUrl" class="form-control" @bind-Value="webinar.ImageUrl" />
+            <ValidationMessage For="@(() => webinar.ImageUrl)" />
+        </div>
+
+        <div class="form-group">
+            <label for="startDateTime">Start Date and Time:</label>
+            <InputDate id="startDateTime" class="form-control" @bind-Value="webinar.StartDateTime" />
+            <ValidationMessage For="@(() => webinar.StartDateTime)" />
+        </div>
+
+        <div class="form-group">
+            <label for="endDateTime">End Date and Time:</label>
+            <InputDate id="endDateTime" class="form-control" @bind-Value="webinar.EndDateTime" />
+            <ValidationMessage For="@(() => webinar.EndDateTime)" />
+        </div>
+
+        <div class="form-group">
+            <label for="speakerId">Speaker ID:</label>
+            <InputNumber id="speakerId" class="form-control" @bind-Value="webinar.SpeakerID" />
+            <ValidationMessage For="@(() => webinar.SpeakerID)" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save</button>
+    </EditForm>
+}
+
+@code {
+    private Webinar webinar;
+
+    [Parameter]
+    public string WebinarId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        int.TryParse(WebinarId, out int webinarId);
+        webinar = await WebinarService.GetWebinarByIdAsync(webinarId);
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        await WebinarService.UpdateWebinarAsync(webinar);
+        NavigationManager.NavigateTo("/webinars");
+    }
+}

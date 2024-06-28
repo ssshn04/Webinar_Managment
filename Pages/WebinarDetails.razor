@@ -1,0 +1,81 @@
+﻿@page "/webinar/{WebinarID:int}"
+@using WebinarManagement.Models
+@using WebinarManagement.Services
+@inject WebinarService WebinarService
+@inject UserAccountService UserAccountService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h3>Webinar Details</h3>
+
+@if (webinar == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">@webinar.Title</h5>
+            <h6 class="card-subtitle mb-2 text-muted">Speaker: @(webinar.Speaker != null ? webinar.Speaker.UserName : "Unknown")</h6>
+            <p class="card-text">@webinar.Description</p>
+            <p class="card-text">Starts: @webinar.StartDateTime.ToString("yyyy-MM-dd HH:mm")</p>
+            <p class="card-text">Ends: @webinar.EndDateTime.ToString("yyyy-MM-dd HH:mm")</p>
+            <img class="img-fluid" src="@webinar.ImageUrl" alt="Webinar Image" />
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-outline-primary" @onclick="NavigateBack">Back to Webinars</button>
+
+            @if (participantStatus)
+            {
+                <button class="btn btn-outline-danger" @onclick="Unsubscribe">Unsubscribe</button>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int WebinarID { get; set; }
+
+    private Webinar webinar;
+    private bool participantStatus;
+
+    protected override async Task OnInitializedAsync()
+    {
+        webinar = await WebinarService.GetWebinarByIdAsync(WebinarID);
+        await CheckParticipantStatus();
+    }
+
+    private async Task CheckParticipantStatus()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            var currentUser = await UserAccountService.GetUserByUsernameAsync(user.Identity.Name);
+            participantStatus = await UserAccountService.IsParticipantAsync(currentUser.UserID, WebinarID);
+        }
+    }
+
+    private async Task Unsubscribe()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            var currentUser = await UserAccountService.GetUserByUsernameAsync(user.Identity.Name);
+            await UserAccountService.RemoveParticipantAsync(currentUser.UserID, WebinarID);
+            await JSRuntime.InvokeVoidAsync("alert", "You have unsubscribed from the webinar.");
+            NavigationManager.NavigateTo("/webinars");
+        }
+    }
+
+    private void NavigateBack()
+    {
+        NavigationManager.NavigateTo("/webinars");
+    }
+}

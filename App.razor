@@ -1,0 +1,27 @@
+﻿<CascadingAuthenticationState>
+    <MatThemeProvider Theme="@theme">
+        <CascadingAuthenticationState>
+            <Router AppAssembly="@typeof(App).Assembly">
+                <Found Context="routeData">
+                    <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+                    <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+                </Found>
+                <NotFound>
+                    <PageTitle>Not found</PageTitle>
+                    <LayoutView Layout="@typeof(MainLayout)">
+                        <p role="alert">Sorry, there's nothing at this address.</p>
+                    </LayoutView>
+                </NotFound>
+            </Router>
+        </CascadingAuthenticationState>
+    </MatThemeProvider>
+</CascadingAuthenticationState>
+
+
+@code {
+    MatTheme theme = new MatTheme()
+        {
+            Primary = "#987070",
+            Surface = "#F1E5D1"
+        };
+}

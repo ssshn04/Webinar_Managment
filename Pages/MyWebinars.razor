@@ -1,0 +1,148 @@
+﻿@page "/my-webinars"
+@using WebinarManagement.Authentication
+@using WebinarManagement.Models
+@using WebinarManagement.Services
+@inject UserAccountService userAccountService
+@inject WebinarService webinarService
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@attribute [Authorize(Roles = "Speaker, Participant")]
+<PageTitle>My Webinars</PageTitle>
+
+<style>
+    .demo-mat-card {
+        max-width: 500px;
+        margin: 2px;
+        margin-bottom: 20px;
+    }
+
+    .demo-mat-card-content {
+        padding: 8px;
+    }
+
+    .demo-mat-card-clean-margin {
+        margin: 0;
+    }
+
+    .table {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+    }
+</style>
+
+
+<h3>My Webinars</h3>
+
+@if (webinars == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!webinars.Any())
+{
+    <p>No webinars found.</p>
+}
+else
+{
+    <ul>
+        <div class="table">
+            @foreach (var webinar in webinars)
+            {
+                <MatCard class="demo-mat-card">
+                    <MatCardContent @onclick="() => NavigateToWebinar(webinar.WebinarID)">
+                        <MatCardMedia Wide="true" ImageUrl="@webinar.ImageUrl"></MatCardMedia>
+                        <div class="demo-mat-card-content">
+                            <MatHeadline6 class="demo-mat-card-clean-margin">
+                                @webinar.Title
+                            </MatHeadline6>
+                            <MatSubtitle2 class="demo-mat-card-clean-margin">
+                                by @(webinar.Speaker != null ? webinar.Speaker.UserName : "Unknown")
+                            </MatSubtitle2>
+                        </div>
+
+                        <MatBody2 class="demo-mat-card-content demo-mat-card-clean-margin">
+                            @webinar.ShortDescription
+                        </MatBody2>
+                    </MatCardContent>
+
+                    <MatCardActions>
+                        @if (IsSpeaker(webinar))
+                        {
+                            <button class="btn btn-outline-primary" @onclick="() => EditWebinar(webinar.WebinarID)">Edit</button>
+                            <button class="btn btn-outline-danger" @onclick="() => DeleteWebinar(webinar.WebinarID)">Delete</button>
+                        } else
+                        {
+                            <button class="btn btn-outline-danger" @onclick="() => Unsubscribe(webinar.WebinarID)">Unsubscribe</button>
+                        }
+                        <button class="btn btn-outline-primary" @onclick="() => NavigateToWebinar(webinar.WebinarID)">Details</button>
+                    </MatCardActions>
+                </MatCard>
+            }
+
+        </div>
+    </ul>
+}
+
+@code {
+    private List<Webinar> webinars;
+    private User currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            currentUser = await userAccountService.GetUserByUsernameAsync(user.Identity.Name);
+            if (currentUser != null)
+            {
+                webinars = await userAccountService.GetUserWebinarsAsync(currentUser.UserID);
+            }
+        }
+    }
+
+    private bool IsSpeaker(Webinar webinar)
+    {
+        return webinar.Speaker != null && webinar.SpeakerID == currentUser.UserID;
+    }
+
+    private bool IsParticipant(Webinar webinar)
+    {
+        return webinar.Participants.Any(p => p.UserID == currentUser.UserID);
+    }
+
+    private void NavigateToWebinar(int webinarId)
+    {
+        NavigationManager.NavigateTo($"/webinar/{webinarId}");
+    }
+
+    private async Task EditWebinar(int webinarId)
+    {
+        NavigationManager.NavigateTo($"/editwebinar/{webinarId}");
+    }
+
+    private async Task DeleteWebinar(int webinarId)
+    {
+        var confirmDelete = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this webinar?");
+
+        if (confirmDelete)
+        {
+            await webinarService.DeleteWebinarAsync(webinarId);
+            webinars = await userAccountService.GetUserWebinarsAsync(currentUser.UserID);
+        }
+    }
+
+    private async Task Unsubscribe(int webinarId)
+    {
+        var confirmUnsubscribe = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to unsubscribe from this webinar?");
+
+        if (confirmUnsubscribe)
+        {
+            await userAccountService.RemoveParticipantAsync(currentUser.UserID, webinarId);
+            await JSRuntime.InvokeVoidAsync("alert", "You have unsubscribed from the webinar.");
+            webinars = await userAccountService.GetUserWebinarsAsync(currentUser.UserID);
+        }
+    }
+}

@@ -1,0 +1,53 @@
+﻿@using WebinarManagement.Models
+
+<MatCard class="demo-mat-card">
+    <MatCardContent>
+        <MatCardMedia Wide="true" ImageUrl="@ImageUrl"></MatCardMedia>
+        <div class="demo-mat-card-content">
+            <MatHeadline6 class="demo-mat-card-clean-margin">
+                @Title
+            </MatHeadline6>
+            <MatSubtitle2 class="demo-mat-card-clean-margin">
+                by @SpeakerUserName
+            </MatSubtitle2>
+        </div>
+
+        <MatBody2 class="demo-mat-card-content demo-mat-card-clean-margin">
+            @Description
+        </MatBody2>
+    </MatCardContent>
+    <MatCardActions>
+        <button class="btn btn-outline-warning" @onclick="EditClicked">Edit</button>
+        <button class="btn btn-outline-danger" @onclick="DeleteClicked">Delete</button>
+    </MatCardActions>
+</MatCard>
+
+@code {
+    [Parameter]
+    public string ImageUrl { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public string Description { get; set; }
+
+    [Parameter]
+    public string SpeakerUserName { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnDelete { get; set; }
+
+    private async Task EditClicked()
+    {
+        await OnEdit.InvokeAsync(1); // Передаємо ідентифікатор вебінару на редагування
+    }
+
+    private async Task DeleteClicked()
+    {
+        await OnDelete.InvokeAsync(1); // Передаємо ідентифікатор вебінару на видалення
+    }
+}

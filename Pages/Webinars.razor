@@ -1,0 +1,158 @@
+﻿@page "/webinars"
+@using WebinarManagement.Authentication
+@using WebinarManagement.Models
+@using WebinarManagement.Services
+@using Microsoft.AspNetCore.Components.Authorization
+@inject WebinarService WebinarService
+@inject UserAccountService UserAccountService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<style>
+    .demo-mat-card {
+        max-width: 500px;
+        margin: 2px;
+        margin-bottom: 20px;
+    }
+
+    .demo-mat-card-content {
+        padding: 8px;
+    }
+
+    .demo-mat-card-clean-margin {
+        margin: 0;
+    }
+
+    .table {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+    }
+</style>
+
+<h3>Webinars</h3>
+
+@if (webinars == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="table">
+        @foreach (var webinar in webinars)
+        {
+            <MatCard class="demo-mat-card">
+                <MatCardContent @onclick="() => NavigateToWebinar(webinar.WebinarID)">
+                    <MatCardMedia Wide="true" ImageUrl="@webinar.ImageUrl"></MatCardMedia>
+                    <div class="demo-mat-card-content">
+                        <MatHeadline6 class="demo-mat-card-clean-margin">
+                            @webinar.Title
+                        </MatHeadline6>
+                        <MatSubtitle2 class="demo-mat-card-clean-margin">
+                            by @(webinar.Speaker != null ? webinar.Speaker.UserName : "Unknown")
+                        </MatSubtitle2>
+                    </div>
+
+                    <MatBody2 class="demo-mat-card-content demo-mat-card-clean-margin">
+                        @webinar.ShortDescription
+                    </MatBody2>
+                </MatCardContent>
+
+                @if (participantStatus.ContainsKey(webinar.WebinarID) && participantStatus[webinar.WebinarID])
+                {
+                    <button class="btn btn-outline-danger" @onclick="async () => { await RemoveParticipant(webinar.WebinarID); await DisplayAlert(); }">Leave</button>
+                }
+                else
+                {
+                    <button class="btn btn-outline-primary" @onclick="async () => { await Participate(webinar.WebinarID); await DisplayAlert(); await NavigateToMyWebinar(); }">Participate</button>
+                }
+
+            </MatCard>
+        }
+    </div>
+}
+
+@code {
+    private List<Webinar> webinars;
+    private Dictionary<int, bool> participantStatus = new Dictionary<int, bool>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            var currentUser = await UserAccountService.GetUserByUsernameAsync(user.Identity.Name);
+            webinars = await WebinarService.GetWebinarsAsync();
+
+            foreach (var webinar in webinars)
+            {
+                UpdateParticipantStatus(webinar.WebinarID);
+            }
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private async Task UpdateParticipantStatus(int webinarId)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            var currentUser = await UserAccountService.GetUserByUsernameAsync(user.Identity.Name);
+            participantStatus[webinarId] = await UserAccountService.IsParticipantAsync(currentUser.UserID, webinarId);
+            StateHasChanged();
+        }
+    }
+
+    private async Task Participate(int webinarId)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            var currentUser = await UserAccountService.GetUserByUsernameAsync(user.Identity.Name);
+            await UserAccountService.AddParticipantAsync(currentUser.UserID, webinarId);
+            UpdateParticipantStatus(webinarId);
+        }
+    }
+
+    private async Task RemoveParticipant(int webinarId)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity.IsAuthenticated)
+        {
+            var currentUser = await UserAccountService.GetUserByUsernameAsync(user.Identity.Name);
+            if (currentUser != null)
+            {
+                await UserAccountService.RemoveParticipantAsync(currentUser.UserID, webinarId);
+                await JSRuntime.InvokeVoidAsync("alert", "You have left the webinar.");
+                NavigationManager.NavigateTo("/webinars");
+            }
+        }
+    }
+
+    private async Task DisplayAlert()
+    {
+        var message = $"Action completed successfully!";
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+    private void NavigateToWebinar(int webinarId)
+    {
+        NavigationManager.NavigateTo($"/webinar/{webinarId}");
+    }
+
+    private async Task NavigateToMyWebinar()
+    {
+        NavigationManager.NavigateTo($"/my-webinars");
+    }
+}

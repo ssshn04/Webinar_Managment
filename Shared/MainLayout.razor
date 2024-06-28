@@ -1,0 +1,82 @@
+﻿@using WebinarManagement.Authentication
+@inherits LayoutComponentBase
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+
+<MatAnchorUtils></MatAnchorUtils>
+<MatAppBar Style="z-index: 100;" Class="mat"></MatAppBar>
+<MatAppBarRow>
+    <MatAppBarSection>
+        <MatIconButton Icon="menu" OnClick="@((e) => MenuButtonClicked())"></MatIconButton>
+        <MatHidden Breakpoint="@MatBreakpoint.XS" Direction="@MatHiddenDirection.Down">
+            <MatAppBarTitle>Webinar Managment</MatAppBarTitle>
+        </MatHidden>
+        <MatHidden Breakpoint="@MatBreakpoint.SM" Direction="@MatHiddenDirection.Up">
+            <MatAppBarTitle>Webinar Managment</MatAppBarTitle>
+        </MatHidden>
+    </MatAppBarSection>
+
+    <MatAppBarSection Align="@MatAppBarSectionAlign.End">
+        <AuthorizeView>
+            <NotAuthorized>
+                <a href="/login">Login</a>
+            </NotAuthorized>
+            <Authorized>
+                <a @onclick="Logout" href="javascript:void(0)">Logout</a>
+            </Authorized>
+        </AuthorizeView>
+        <MatIconButton Icon="favorite"></MatIconButton>
+    </MatAppBarSection>
+</MatAppBarRow>
+
+<MatDrawerContainer Style="width: 100vw; height: 100vh;" Class="mat">
+    <MatHidden Breakpoint="@MatBreakpoint.SM" Direction="@MatHiddenDirection.Up" HiddenChanged="@ModelDrawerHiddenChanged">
+    <ChildContent>
+        <MatDrawer  @bind-Opened="@_navMenuOpened" Mode="@MatDrawerMode.Modal">
+            <MatAppBarAdjust></MatAppBarAdjust>
+            <DemoDraweContent></DemoDraweContent>
+        </MatDrawer>
+    </ChildContent>
+    <ElseContent>
+        <MatDrawer  @bind-Opened="@_navMenuOpened" Mode="@MatDrawerMode.Dismissible">
+            <MatAppBarAdjust></MatAppBarAdjust>
+            <DemoDraweContent></DemoDraweContent>
+        </MatDrawer>
+    </ElseContent>
+    </MatHidden>
+
+    <MatDrawerContent Class="mdc-theme--background">
+        <MatAppBarAdjust></MatAppBarAdjust>
+        <div class="body-wrapper" style="padding:30px">
+            @Body
+        </div>
+    </MatDrawerContent>
+</MatDrawerContainer>
+
+@code{
+    protected async override Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+
+    protected void ModelDrawerHiddenChanged(bool hidden)
+    {
+        if (!hidden)
+        {
+            _navMenuOpened = false;
+        }
+    }
+
+    bool _navMenuOpened = true;
+    void MenuButtonClicked()
+    {
+        _navMenuOpened = !_navMenuOpened;
+        this.StateHasChanged();
+    }
+    private async Task Logout() 
+    {
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+        await customAuthStateProvider.UpdateAuthenticationState(null);
+        navManager.NavigateTo("/", true);
+    }
+}
