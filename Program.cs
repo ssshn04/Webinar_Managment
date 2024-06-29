@@ -5,6 +5,9 @@ using WebinarManagement.Data;
 using WebinarManagement.Services;
 using WebinarManagement.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +27,9 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<WebinarService>();
 builder.Services.AddScoped<UserAccountService>();
 
+// Add MVC controllers
+builder.Services.AddControllers();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -36,6 +42,13 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Add authentication and authorization middlewares
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Map the API controllers
+app.MapControllers();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
